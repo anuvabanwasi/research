@@ -72,7 +72,7 @@ def create_image_matrix(l, max_x, max_y, min_x, min_y):
 
 
 
-# Display graph
+# Display plot
 def display_image(img, num_of_rows, num_of_cols, color,title):
     global plot_id
     plt.imshow(crop(img, 0, 0, num_of_rows, num_of_cols), cmap=color, interpolation = "nearest")
@@ -276,10 +276,11 @@ def plot_histogram(l, i):
 
 
 # constants
-scale_factor = 100
+#scale_factor = 100
+scale_factor = 10
 plot_id = 1
-
-radius = [1000, 2000]
+#radius = [1000, 2000]
+radius = [200,400]
 max_dups = [3, 10, 50]
 
 
