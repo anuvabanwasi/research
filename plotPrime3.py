@@ -107,8 +107,7 @@ def create_fasta_file(f1, f2):
             val3 = tokens[5]
             val4 = tokens[6].split()[0]
 
-            #if(val1 == "1" and val2 == "11101"):
-            if(val1 == "1" and val2 == "1101"):
+            if(val1 == ax and val2 == ay):
                 x = int(val3)
                 y = int(val4)
 
@@ -291,19 +290,19 @@ clusters_fastq_file_name = 'Clusters.fastq'
 #ax = '1'
 #ay = '11101'
 
-#fastq_file_name = '48900_S54_L001_R1_001.fastq'
-#fasta_file_name = '48900_S54_L001_R1_001.fasta'
-#scale_factor = 100
-#radius = [1000,2000]
-#ax = '1'
-#ay = '1101'
-
-fastq_file_name = 'Nia2_ALL_R1.fastq'
-fasta_file_name = 'Nia2_ALL_R1.fasta'
-scale_factor = 10
-radius = [200,400]
+fastq_file_name = '48900_S54_L001_R1_001.fastq'
+fasta_file_name = '48900_S54_L001_R1_001.fasta'
+scale_factor = 100
+radius = [1000,2000]
 ax = '1'
 ay = '1101'
+
+#fastq_file_name = 'Nia2_ALL_R1.fastq'
+#fasta_file_name = 'Nia2_ALL_R1.fasta'
+#scale_factor = 10
+#radius = [200,400,800]
+#ax = '1'
+#ay = '1101'
 
 # Read FASTQ file and plot it
 l, max_x, max_y, min_x, min_y = readFile(fastq_file_name, ax, ay)
@@ -317,7 +316,9 @@ create_fasta_file(fastq_file_name, fasta_file_name)
 # Find nearby clusters(within radius 1000) to a randomly chosen point
 # Create a FASTQ file out of the output
 
-co = [(10000, 10000), (15000, 15000), (20000, 20000)]
+co = [(10000, 10000), (15000, 15000), (20000, 20000), (15000,10000), (12000,11000)]
+
+
 for r in radius:
 
     find_nearby_clusters(l, co, r, clusters_fastq_file_name)
