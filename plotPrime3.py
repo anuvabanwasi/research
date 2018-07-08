@@ -42,11 +42,11 @@ def readFile(f):
 
                 l.append((x,y,lines[i+1]))
 
-    max_x = compute_max(l, 0)
-    min_x = compute_min(l, 0)
+                max_x = compute_max(l, 0)
+                min_x = compute_min(l, 0)
 
-    max_y = compute_max(l, 1)
-    min_y = compute_min(l, 1)
+                max_y = compute_max(l, 1)
+                min_y = compute_min(l, 1)
 
     return l, max_x, max_y, min_x, min_y
 
@@ -108,8 +108,8 @@ def create_fasta_file(f1, f2):
             val3 = tokens[5]
             val4 = tokens[6].split()[0]
 
-            #if(val1 == "1" and val2 == "11101"):
-            if(val1 == "1" and val2 == "1101"):
+            if(val1 == "1" and val2 == "11101"):
+            #if(val1 == "1" and val2 == "1101"):
                 x = int(val3)
                 y = int(val4)
 
@@ -121,13 +121,12 @@ def create_fasta_file(f1, f2):
 
 # Find all clusters near an x, y coordinate within a radius of r
 # Append the 
-def find_nearby_clusters(l, cluster_coords, r, f3):
+def find_nearby_clusters(l, col, r, f3):
     f3 = open(f3, "w")
     m = []
-    for cluster_coord in cluster_coords:
-        x = cluster_coord[0]
-        y = cluster_coord[1]
-
+    for co in col:
+        x = co[0]
+        y = co[1]
         for t in l:
             if math.sqrt(math.pow((y - t[1]), 2) + math.pow((x - t[0]), 2)) < r:
                 m.append(t)
@@ -304,11 +303,10 @@ create_fasta_file("DNA8590_S47_L001_R1_001.fastq", "DNA8590_S47_L001_R1_001.fast
 # Find nearby clusters(within radius 1000) to a randomly chosen point
 # Create a FASTQ file out of the output
 
-cluster_coords = [(10000,10000), (15000, 10000)]    
-
+co = [(10000, 10000), (15000, 15000), (20000, 20000)]
 for r in radius:
 
-    find_nearby_clusters(l, cluster_coords, r, "Clusters.fastq")
+    find_nearby_clusters(l, co, r, "Clusters.fastq")
     #find_nearby_clusters(l, 10000, 10000, r, "Nia2_ALL_R1.fastq")
 
     # Call bwa index in python to index FASTA file
@@ -330,7 +328,7 @@ for r in radius:
         plot_alignments = identify_alignments(plot_dict, val)
         plot_points.extend(plot_alignments)
         img1, num_of_rows1, num_of_cols1 = create_image_matrix(plot_points, max_x, max_y, min_x, min_y)
-        title = " cluster_coords : " + str(cluster_coord) + " radius : " + str(r) + " max_dups : " + str(val) 
+        title = "radius : " + str(r) + " max_dups : " + str(val) 
         display_image(img1, num_of_rows1, num_of_cols1, plt.cm.Blues, title)
 
     # Create and plot histogram
