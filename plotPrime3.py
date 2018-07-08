@@ -12,7 +12,7 @@ import operator
 # Create a list of triples (x,y,z) where x is the x coordinate, y is the y coordinate and z is the sequence
 # Return the list of triples l, max x coordinate, max y coordinate,  min x coordinate, min y coordinate
 
-def readFile(f):
+def readFile(f, ax, ay):
 
     max_x = 0
     max_y = 0
@@ -35,18 +35,17 @@ def readFile(f):
             val3 = tokens[5]
             val4 = tokens[6].split()[0]
 
-            if(val1 == "1" and val2 == "11101"):
-            #if(val1 == "1" and val2 == "1101"):
+            if(val1 == ax and val2 == ay):
                 x = int(val3)
                 y = int(val4)
 
                 l.append((x,y,lines[i+1]))
 
-                max_x = compute_max(l, 0)
-                min_x = compute_min(l, 0)
+    max_x = compute_max(l, 0)
+    min_x = compute_min(l, 0)
 
-                max_y = compute_max(l, 1)
-                min_y = compute_min(l, 1)
+    max_y = compute_max(l, 1)
+    min_y = compute_min(l, 1)
 
     return l, max_x, max_y, min_x, min_y
 
@@ -108,8 +107,8 @@ def create_fasta_file(f1, f2):
             val3 = tokens[5]
             val4 = tokens[6].split()[0]
 
-            if(val1 == "1" and val2 == "11101"):
-            #if(val1 == "1" and val2 == "1101"):
+            #if(val1 == "1" and val2 == "11101"):
+            if(val1 == "1" and val2 == "1101"):
                 x = int(val3)
                 y = int(val4)
 
@@ -279,26 +278,41 @@ def plot_histogram(l, i):
 
 
 # constants
-scale_factor = 100
-#scale_factor = 10
-plot_id = 1
-radius = [1000, 2000]
-#radius = [200,400]
-max_dups = [3, 10, 50]
 
+plot_id = 1
+max_dups = [3, 10, 50]
+output_file_name = 'output.txt'
+clusters_fastq_file_name = 'Clusters.fastq'
+
+#fastq_file_name = 'DNA8590_S47_L001_R1_001.fastq'
+#fasta_file_name = 'DNA8590_S47_L001_R1_001.fasta'
+#scale_factor = 100
+#radius = [1000, 2000]
+#ax = '1'
+#ay = '11101'
+
+#fastq_file_name = '48900_S54_L001_R1_001.fastq'
+#fasta_file_name = '48900_S54_L001_R1_001.fasta'
+#scale_factor = 100
+#radius = [1000,2000]
+#ax = '1'
+#ay = '1101'
+
+fastq_file_name = 'Nia2_ALL_R1.fastq'
+fasta_file_name = 'Nia2_ALL_R1.fasta'
+scale_factor = 10
+radius = [200,400]
+ax = '1'
+ay = '1101'
 
 # Read FASTQ file and plot it
-l, max_x, max_y, min_x, min_y = readFile("DNA8590_S47_L001_R1_001.fastq")
-#l, max_x, max_y, min_x, min_y = readFile("48900_S54_L001_R1_001.fastq")
-#l, max_x, max_y, min_x, min_y = readFile("Nia2_ALL_R1.fastq")
+l, max_x, max_y, min_x, min_y = readFile(fastq_file_name, ax, ay)
 img, num_of_rows, num_of_cols = create_image_matrix(l, max_x, max_y, min_x, min_y)
-display_image(img, num_of_rows, num_of_cols, plt.cm.Reds,"fastq file")
+display_image(img, num_of_rows, num_of_cols, plt.cm.Reds, "fastq file")
 
 
 # Create FASTA file
-create_fasta_file("DNA8590_S47_L001_R1_001.fastq", "DNA8590_S47_L001_R1_001.fasta")
-#create_fasta_file("48900_S54_L001_R1_001.fastq", "48900_S54_L001_R1_001.fasta")
-#create_fasta_file("Nia2_ALL_R1.fastq", "Nia2_ALL_R1.fasta")
+create_fasta_file(fastq_file_name, fasta_file_name)
 
 # Find nearby clusters(within radius 1000) to a randomly chosen point
 # Create a FASTQ file out of the output
@@ -306,21 +320,16 @@ create_fasta_file("DNA8590_S47_L001_R1_001.fastq", "DNA8590_S47_L001_R1_001.fast
 co = [(10000, 10000), (15000, 15000), (20000, 20000)]
 for r in radius:
 
-    find_nearby_clusters(l, co, r, "Clusters.fastq")
-    #find_nearby_clusters(l, 10000, 10000, r, "Nia2_ALL_R1.fastq")
+    find_nearby_clusters(l, co, r, clusters_fastq_file_name)
 
     # Call bwa index in python to index FASTA file
-    subprocess.call(['bwa', 'index',  'DNA8590_S47_L001_R1_001.fasta'])
-    #subprocess.call(['bwa', 'index',  '48900_S54_L001_R1_001.fasta'])
-    #subprocess.call(['bwa', 'index',  'Nia2_ALL_R1.fasta'])
-
+    subprocess.call(['bwa', 'index',  fasta_file_name])
+    
     # Call bwa in python on the FASTA file and the cluster FASTQ file
-    subprocess.call(['bwa', 'mem', '-a', '-o', 'outpute.txt', 'DNA8590_S47_L001_R1_001.fasta','Clusters.fastq'])
-    #subprocess.call(['bwa', 'mem', '-a', '-o', 'outputM.txt', '48900_S54_L001_R1_001.fasta','48900_S54_L001_R1_001.fastq'])
-    #subprocess.call(['bwa', 'mem', '-a', '-o', 'outputN.txt', 'Nia2_ALL_R1.fasta','Nia2_ALL_R1.fastq'])
-
+    subprocess.call(['bwa', 'mem', '-a', '-o', output_file_name, fasta_file_name, clusters_fastq_file_name])
+    
     # Parse the output of bwa
-    l2, plot_dict  = parse_bwa_output("outpute.txt")
+    l2, plot_dict  = parse_bwa_output(output_file_name)
     
     # Plot the output of bwa
     for val in max_dups:
