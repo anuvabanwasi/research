@@ -290,19 +290,19 @@ clusters_fastq_file_name = 'Clusters.fastq'
 #ax = '1'
 #ay = '11101'
 
-fastq_file_name = '48900_S54_L001_R1_001.fastq'
-fasta_file_name = '48900_S54_L001_R1_001.fasta'
-scale_factor = 100
-radius = [1000,2000]
-ax = '1'
-ay = '1101'
-
-#fastq_file_name = 'Nia2_ALL_R1.fastq'
-#fasta_file_name = 'Nia2_ALL_R1.fasta'
-#scale_factor = 10
-#radius = [200,400,800]
+#fastq_file_name = '48900_S54_L001_R1_001.fastq'
+#fasta_file_name = '48900_S54_L001_R1_001.fasta'
+#scale_factor = 100
+#radius = [1000,2000]
 #ax = '1'
 #ay = '1101'
+
+fastq_file_name = 'Nia2_ALL_R1.fastq'
+fasta_file_name = 'Nia2_ALL_R1.fasta'
+scale_factor = 10
+radius = [200,400,800]
+ax = '1'
+ay = '1101'
 
 # Read FASTQ file and plot it
 l, max_x, max_y, min_x, min_y = readFile(fastq_file_name, ax, ay)
@@ -316,8 +316,7 @@ create_fasta_file(fastq_file_name, fasta_file_name)
 # Find nearby clusters(within radius 1000) to a randomly chosen point
 # Create a FASTQ file out of the output
 
-co = [(10000, 10000), (15000, 15000), (20000, 20000), (15000,10000), (12000,11000)]
-
+co = [(5000,5000), (7000, 7000), (9000, 9000), (10000, 10000), (10000, 12000), (12000, 12000), (15000, 15000), (18000, 18000), (18000, 19000), (16000, 15000), (15000,10000), (12000,11000), (14000, 10000), (17000, 17000), (6000, 15000), (10000, 15000), (18000, 10000), (14000, 18000), (11000, 18000), (9000, 10000), (7000,14000), (6000,11000), (11000, 6000), (14000, 12000), (14000, 14000)]
 
 for r in radius:
 
