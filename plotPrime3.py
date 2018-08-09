@@ -4,6 +4,9 @@ from scipy import *
 
 import subprocess
 import operator
+from random import randint
+import os.path
+import itertools
 
 # Read FASTQ file
 # Tokenize every line that starts with '@'. if tokens[3] == '1' and tokens[4] == '11101', capture tokens[4] and tokens[5] as (x,y) coordinates
@@ -56,15 +59,20 @@ def readFile(f, ax, ay):
 # Returns image 2D matrix, num of rows in the matrix, num of cols in the matrix
 def create_image_matrix(l, max_x, max_y, min_x, min_y):
 
-    num_of_rows = max_x - min_x
-    num_of_cols = max_y - min_y
+    #num_of_rows = max_x - min_x
+    #num_of_cols = max_y - min_y
+
+    num_of_rows = max_x
+    num_of_cols = max_y
 
     dims = (num_of_rows + 1   , num_of_cols + 1)
 
     img = np.zeros(dims)
     for t in l:
-        x_coord = t[0]/scale_factor - num_of_rows
-        y_coord = t[1]/scale_factor - num_of_cols
+        #x_coord = t[0]/scale_factor - num_of_rows
+        #y_coord = t[1]/scale_factor - num_of_cols
+        x_coord = t[0]/scale_factor 
+        y_coord = t[1]/scale_factor 
         img[x_coord][y_coord] = 1
         
     return img, num_of_rows, num_of_cols
@@ -142,6 +150,7 @@ def find_nearby_clusters(l, col, r, f3):
 # if(tokens[1] == "0"), then it is a new match group
 # Continue to read output lines, select tokens[2] and tokenize on ":" to obtain x and y coordinate and add to match group list
 
+
 def parse_bwa_output(f):
 
     f = open(f, "r")
@@ -160,13 +169,6 @@ def parse_bwa_output(f):
 
             if(tokens[1] == "0"):
                 
-                seq_id = tokens[0]
-
-                seq_tokens = seq_id.split(":")
-                
-                seq_x = int(seq_tokens[0])
-                seq_y = int(seq_tokens[1])
-
                 start_index = i
                 
                 i = i + 1
@@ -176,11 +178,16 @@ def parse_bwa_output(f):
 
                 end_index = i - 1
                 
-                alignments = lines[start_index:end_index]
+                alignments = lines[start_index:end_index+1]
 
                 i = i - 1
 
-                l.append((seq_x, seq_y, len(alignments)))
+                #print ("alignments is " , len(alignments))
+                
+                seq_x, seq_y, found = handle_sequences(alignments)
+               
+                if(found == "true"):
+                    l.append((seq_x, seq_y, len(alignments)))
 
                 plot_dict[(seq_x, seq_y)] = handle_alignments(alignments)
 
@@ -206,6 +213,25 @@ def compute_min(l, index):
 
     return min_val
 
+def handle_lines(lines):
+
+    alignments = []
+    seq_xy = []
+
+    for i in range(0, len(lines)):
+        tokens = lines[i].split("\t")
+
+        if(tokens[0] == tokens[2]):
+            seq_xy = tokens[0].split(":")
+
+        align_xy = tokens[2].split(":")
+
+        align_x = int(align_xy[0])
+        align_y = int(align_xy[1])
+
+        alignments.append((align_x,align_y))
+
+    return seq_xy, alignments
 
 def handle_alignments(lines):
 
@@ -221,6 +247,34 @@ def handle_alignments(lines):
 
     return results
 
+def handle_sequences(lines):
+
+    results = []
+
+    found = "false"
+
+    for i in range(0, len(lines)):
+        tokens = lines[i].split("\t")
+        
+        #if (tokens[0] != tokens[2] and len(lines) == 1):
+            #print ("mismatch " , tokens[0] , " " , tokens[2])
+
+        if (tokens[0] == tokens[2]):
+
+            xy = tokens[0].split(":")
+
+            x = int(xy[0])
+            y = int(xy[1])
+
+            found = "true"
+
+            return x, y, found
+    
+    if (found == "false"):
+            return 0, 0, found
+
+        
+
 
 def identify_sequences(l , max_dups):
     
@@ -228,7 +282,7 @@ def identify_sequences(l , max_dups):
     L2 = np.array(l)
 
     # select all sequences where the num of alignments <= max_dups
-    sequences = L2[:, 2] < max_dups
+    sequences = L2[:, 2] <= max_dups
 
     # above statement returns array of True/False, convert to array of actual values
     valid_sequences = L2[sequences]
@@ -245,10 +299,12 @@ def identify_sequences(l , max_dups):
 def identify_alignments(plot_dict , max_val):
     
     res = []
+
     for key, value in plot_dict.items():
         if (len(value) <= max_val and len(value) != 0):
             res.extend(value)
 
+    #print ("len of keys of dict ", len(plot_dict))
     return res
 
 
@@ -275,21 +331,65 @@ def plot_histogram(l, i):
     plt.show()
 
 
+def compute_area_of_circle(r):
+    area = math.pi * r * r
+    return area
+
+def compute_area_of_sector(r1,r2):
+    theta = math.acos(r2/r1) * 2
+    area_of_sector = (theta * r1 * r1) / 2
+    return theta, area_of_sector
+
+def compute_area_of_triangle(r1, theta):
+    area_of_triangle = (r1 * r1 * math.sin(theta) ) / 2
+    return area_of_triangle
+
+def format(val):
+    val = val * 1000000
+    val = float("{0:.2f}".format(val))
+    return val
+
+def generate_random_seeds(size):
+    co = []
+    for seed_index in range(size):
+        seed_x = randint(1000, 18000)
+        seed_y = randint(1000, 18000)
+        
+        co.append((seed_x,seed_y))
+
+    return co
+
+def generate_evenly_spaced_seeds(size, min_x, max_x, min_y, max_y):
+    co = []
+   
+    x1 = np.linspace(min_x*scale_factor, max_x*scale_factor, num=size)
+    y1 = np.linspace(min_y*scale_factor, max_y*scale_factor, num=size)
+
+    #l = [0, 500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000, 7500, 8000, 8500, 9000, 9500, 10000, 10500, 11000, 11500, 12000, 12500, 13000, 13500, 14000, 14500, 15000, 15500, 16000, 16500, 17000, 17500, 18000, 18500, 19000, 195000, 20000, 20500,  21000, 21500, 22000, 22500,  23000, 23500, 24000, 24500]
+    #y1 = np.array(l)
+
+    for i in itertools.product(x1, y1):
+        co.append(i)
+
+    #print ("co is " , co)
+    return co
 
 # constants
 
 plot_id = 1
-max_dups = [3, 10, 50]
-output_file_name = 'output.txt'
-clusters_fastq_file_name = 'Clusters.fastq'
+max_dups = [1, 3, 10, 50]
+#max_dups = [1]
 
+#base_file_name = 'DNA8590_S47_L001_R1_001'
 #fastq_file_name = 'DNA8590_S47_L001_R1_001.fastq'
 #fasta_file_name = 'DNA8590_S47_L001_R1_001.fasta'
 #scale_factor = 100
-#radius = [1000, 2000]
+#radius = [1000,2000]
+#radius = [1000]
 #ax = '1'
 #ay = '11101'
 
+#base_file_name = '48900_S54_L001_R1_001'
 #fastq_file_name = '48900_S54_L001_R1_001.fastq'
 #fasta_file_name = '48900_S54_L001_R1_001.fasta'
 #scale_factor = 100
@@ -297,10 +397,12 @@ clusters_fastq_file_name = 'Clusters.fastq'
 #ax = '1'
 #ay = '1101'
 
+base_file_name = 'Nia2_ALL_R1'
 fastq_file_name = 'Nia2_ALL_R1.fastq'
 fasta_file_name = 'Nia2_ALL_R1.fasta'
 scale_factor = 10
-radius = [200,400,800]
+radius = [100,200]
+#radius = [100]
 ax = '1'
 ay = '1101'
 
@@ -312,36 +414,121 @@ display_image(img, num_of_rows, num_of_cols, plt.cm.Reds, "fastq file")
 
 # Create FASTA file
 create_fasta_file(fastq_file_name, fasta_file_name)
+   
+# Call bwa index in python to index FASTA file
+subprocess.call(['bwa', 'index',  fasta_file_name]) 
 
 # Find nearby clusters(within radius 1000) to a randomly chosen point
 # Create a FASTQ file out of the output
 
-co = [(5000,5000), (7000, 7000), (9000, 9000), (10000, 10000), (10000, 12000), (12000, 12000), (15000, 15000), (18000, 18000), (18000, 19000), (16000, 15000), (15000,10000), (12000,11000), (14000, 10000), (17000, 17000), (6000, 15000), (10000, 15000), (18000, 10000), (14000, 18000), (11000, 18000), (9000, 10000), (7000,14000), (6000,11000), (11000, 6000), (14000, 12000), (14000, 14000)]
+#co = [(5000,5000), (7000, 7000), (9000, 9000), (10000, 10000), (10000, 12000), (12000, 12000), (15000, 15000), (18000, 18000), (18000, 19000), (16000, 15000), (15000,10000), (12000,11000), (14000, 10000), (17000, 17000), (6000, 15000), (10000, 15000), (18000, 10000), (14000, 18000), (11000, 18000), (9000, 10000), (7000,14000), (6000,11000), (11000, 6000), (14000, 12000), (14000, 14000)]
 
-for r in radius:
+size = [7, 10, 14]
 
-    find_nearby_clusters(l, co, r, clusters_fastq_file_name)
+for N in size:
 
-    # Call bwa index in python to index FASTA file
-    subprocess.call(['bwa', 'index',  fasta_file_name])
-    
-    # Call bwa in python on the FASTA file and the cluster FASTQ file
-    subprocess.call(['bwa', 'mem', '-a', '-o', output_file_name, fasta_file_name, clusters_fastq_file_name])
-    
-    # Parse the output of bwa
-    l2, plot_dict  = parse_bwa_output(output_file_name)
-    
-    # Plot the output of bwa
-    for val in max_dups:
-        plot_points = identify_sequences(l2, val)
-        plot_alignments = identify_alignments(plot_dict, val)
-        plot_points.extend(plot_alignments)
-        img1, num_of_rows1, num_of_cols1 = create_image_matrix(plot_points, max_x, max_y, min_x, min_y)
-        title = "radius : " + str(r) + " max_dups : " + str(val) 
-        display_image(img1, num_of_rows1, num_of_cols1, plt.cm.Blues, title)
+    co = generate_evenly_spaced_seeds(N, min_x, max_x, min_y, max_y)
 
-    # Create and plot histogram
-    plot_histogram(l2, plot_id)
+    for r in radius:
+
+        clusters_fasta_file_name = 'Clusters_' + base_file_name + "_" + str(r) + "_" + str(N) + '.fasta'
+
+        m = find_nearby_clusters(l, co, r, clusters_fasta_file_name)
+
+        print ("\n\clusters size : " , len(m))
+
+        # Create output file names
+
+        output_file_name = 'output_' + base_file_name + "_" + str(r) +  "_" + str(N) + '.txt'
+        
+        output_filtered_file_name = 'output_filtered_' + base_file_name + "_" + str(r) + "_" + str(N) + '.txt'
+
+
+        if not os.path.exists(output_file_name):
+
+            # Call bwa in python on the FASTA file and the cluster FASTQ file
+            subprocess.call(['bwa', 'mem', '-a', '-o', output_file_name, fasta_file_name, clusters_fasta_file_name])
+        
+            COMMAND = "cat " +  output_file_name  + " | awk -F '\t' '{if ($1 ~ /@/) {next}; print}' | awk -F '\t' '{if ($6 ~ /H/) {next}; print}' > " + output_filtered_file_name
+
+            #print("COMMAND ", COMMAND)
+
+            subprocess.call(COMMAND, shell=True)
+
+        else:
+            print ("\n\nAlready exists")
+
+        # Parse the output of bwa
+        l2, plot_dict  = parse_bwa_output(output_filtered_file_name)
+        
+        r1 = ((max_x - min_x) / 2.0 ) * scale_factor # check this
+        r2 = ((max_y - min_y) / 2.0 ) * scale_factor
+
+        area_circle = compute_areeris a_of_circle(r1)
+        theta, area_sector = compute_area_of_sector(r1, r2)
+        area_triangle = compute_area_of_triangle(r1, theta)
+
+        #print ("area of circle ", area_circle)
+        #print ("area of triangle ", area_triangle)
+        #print ("area of sector " , area_sector)
+
+
+        overall_density_denominator = area_circle - 2 * area_sector + 2 * area_triangle
+
+
+        # Plot the output of bwa
+        for val in max_dups:
+            plot_points = identify_sequences(l2, val)
+
+            plot_points_orig = plot_points
+
+            print ("length of plot_points ", len(plot_points) )
+            plot_alignments = identify_alignments(plot_dict, val)
+
+            plot_points.extend(plot_alignments)
+
+            #print("max_x : ", max_x , " max_y : " , max_y)
+
+            img1, num_of_rows1, num_of_cols1 = create_image_matrix(plot_points, max_x, max_y, min_x, min_y)
+
+            # Calculate density
+            numerator = len(plot_points_orig)
+
+            #print ("len(co) ", len(co) , " r " , r/scale_factor)
+
+            denominator = len(co) * math.pi * r * r
+            
+            density =  numerator / denominator
+
+            density = format(density)
+
+            overall_density_numerator = len(plot_points)
+            
+            overall_density = overall_density_numerator / overall_density_denominator
+
+            overall_density = format(overall_density)
+
+            ratio = density / overall_density
+
+            ratio = float("{0:.2f}".format(ratio))
+
+            print ( " density_numerator : " , numerator , " density_denominator: ", denominator)
+
+            print (" overall_density_numerator : " , overall_density_numerator , " overall_density_denominator: ", overall_density_denominator)
+
+            print (" ratio ", ratio)
+
+            title = "radius : " + str(r) + " max_dups : " + str(val) + " density : " + str(density) + " overall density : " + str(overall_density) + " ratio: " + str(ratio)
+            # print "The densities are %.3f" % (first denisty, second density)
+            display_image(img1, num_of_rows1, num_of_cols1, plt.cm.Blues, title)
+
+            #print ("plot_dict ", plot_dict)
+            #print( " denominator ", denominator, " numerator ", numerator , " density " , density, " overall density " , overall_density )
+            
+
+        # Create and plot histogram
+        plot_histogram(l2, plot_id)
+
 
 
 
