@@ -461,10 +461,10 @@ for N in size:
         # Parse the output of bwa
         l2, plot_dict  = parse_bwa_output(output_filtered_file_name)
         
-        r1 = ((max_x - min_x) / 2.0 ) * scale_factor # check this
-        r2 = ((max_y - min_y) / 2.0 ) * scale_factor
+        r1 = (max_x - min_x) / 2.0
+        r2 = (max_y - min_y) / 2.0
 
-        area_circle = compute_areeris a_of_circle(r1)
+        area_circle = compute_area_of_circle(r1)
         theta, area_sector = compute_area_of_sector(r1, r2)
         area_triangle = compute_area_of_triangle(r1, theta)
 
@@ -473,9 +473,10 @@ for N in size:
         #print ("area of sector " , area_sector)
 
 
-        overall_density_denominator = area_circle - 2 * area_sector + 2 * area_triangle
+        #overall_density_denominator = area_circle - 2 * area_sector + 2 * area_triangle
 
-
+        overall_density_denominator = area_circle
+        
         # Plot the output of bwa
         for val in max_dups:
             plot_points = identify_sequences(l2, val)
@@ -496,7 +497,7 @@ for N in size:
 
             #print ("len(co) ", len(co) , " r " , r/scale_factor)
 
-            denominator = len(co) * math.pi * r * r
+            denominator = len(co) * math.pi * (r/scale_factor) * (r/scale_factor)
             
             density =  numerator / denominator
 
@@ -512,11 +513,11 @@ for N in size:
 
             ratio = float("{0:.2f}".format(ratio))
 
-            print ( " density_numerator : " , numerator , " density_denominator: ", denominator)
+            #print ( " density_numerator : " , numerator , " density_denominator: ", denominator)
 
-            print (" overall_density_numerator : " , overall_density_numerator , " overall_density_denominator: ", overall_density_denominator)
+            #print (" overall_density_numerator : " , overall_density_numerator , " overall_density_denominator: ", overall_density_denominator)
 
-            print (" ratio ", ratio)
+            #print (" ratio ", ratio)
 
             title = "radius : " + str(r) + " max_dups : " + str(val) + " density : " + str(density) + " overall density : " + str(overall_density) + " ratio: " + str(ratio)
             # print "The densities are %.3f" % (first denisty, second density)
